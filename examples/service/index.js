@@ -1,4 +1,3 @@
-var pick = require('object-pick');
 var vasco = require('../..');
 var ip = require('ip').address();
 var log = require('debug')('example:service');
