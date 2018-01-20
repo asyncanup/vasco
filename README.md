@@ -12,7 +12,7 @@ npm install vasco
 
 Inside `package.json` of a new service module:
 
-```json
+```js
     "name": "user-api",                 // name of service
     "version": "v1.0.1",                // version of service
     "vasco": {                          // vasco configuration
