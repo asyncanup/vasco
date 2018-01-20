@@ -1,0 +1,26 @@
+{
+  "name": "user",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "DEBUG=* node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "dependencies": {
+    "debug": "^2.2.0",
+    "express": "^4.13.4",
+    "ip": "^1.1.0",
+    "request": "^2.69.0"
+  },
+  "vasco": {
+    "dependencies": {
+      "service": "1.0.0",
+      "auth": "1.0.0"
+    },
+    "mocks": {
+      "auth": "localhost:3000"
+    }
+  }
+}

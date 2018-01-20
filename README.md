@@ -9,8 +9,9 @@ Service Discoverer node module
 
 ## Use
 
-    VASCO_HOST=localhost VASCO_PORT=6379 VASCO_PASS=redispassword \
-    node app.js
+    VASCO_URL=127.0.0.1:6379 node app.js
+
+If not supplied, `VASCO_URL` gets the default value `127.0.0.1:6379`.
 
 Inside `app.js`,
 
@@ -22,7 +23,7 @@ Inside `app.js`,
         return;
       }
       // deps is a hash of dependency names (as defined in package.json)
-      // with active urls ensure to be active
+      // with active urls
       console.log(deps);
     });
     
