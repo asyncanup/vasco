@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "DEBUG=* node index.js",
+    "start": "DEBUG=example:*,vasco node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

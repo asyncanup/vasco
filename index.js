@@ -10,46 +10,47 @@ function connectDB() {
 function findDependencies(dependencies, mockDeps, done) {
   const depUrls = {};
   const depNames = Object.keys(dependencies);
-  const depKeys = depNames.map(depName => depName + '@' + dependencies[depName]);
-  log('depKeys', depKeys);
+  depNames
+    .filter(name => !!mockDeps[name])
+    .forEach(name => depUrls[name] = mockDeps[name]);
 
-  let total = depKeys.length;
-  if (!total) { return done(null, {}); }
+  const getURLKey = name => 'endpoints.' + name + '@' + dependencies[name];
+  const getAliveKey = url => 'alive.' + url;
+  const serviceDepNames = depNames.filter(name => !mockDeps[name]);
+  getActiveURLs(serviceDepNames, depUrls, done);
+  
+  function getActiveURLs(deps, activeURLs, callback) {
+    if (!deps.length) { return callback(null, activeURLs); }
+    
+    const urlBatch = db.batch();
+    deps.forEach(name => urlBatch.srandmember(getURLKey(name)));
+    urlBatch.exec((urlErr, urls) => {
+      if (urlErr) { return callback(urlErr); }
+      for (let i = 0; i < urls.length; i++) {
+        if (!urls[i]) { return callback(new Error('No service:' + deps[urls[i]])); }
+      }
+      
+      const activeBatch = db.batch();
+      urls.forEach(url => activeBatch.get(getAliveKey(url)));
+      activeBatch.exec((activeErr, activeValues) => {
+        if (activeErr) { return callback(activeErr); }
+        deps
+          .filter((name, index) => activeValues[index])
+          .forEach((name, index) => activeURLs[name] = urls[index]);
 
-  depNames.forEach((depName, index) => {
-    if (mockDeps[depName]) { return gotMockDepUrl(depName, mockDeps[depName]); }
-    const key = depKeys[index];
-    const dbKey = 'endpoints.' + key;
-    db.srandmember(dbKey, gotDepUrl(depName, key, dbKey));
-  });
+        const cleanUpBatch = db.batch();
+        deps
+          .map((name, index) => ({ name, alive: activeValues[index], url: urls[index] }))
+          .filter(dep => !dep.alive)
+          .forEach(dep => cleanUpBatch.srem(getURLKey(dep.name), dep.url));
+        cleanUpBatch.exec(cleanUpErr => {
+          if (cleanUpErr) { return callback(cleanUpErr); }
 
-  function gotDepUrl(depName, key, dbKey) {
-    return (err, url) => {
-      if (err) { return done(err); }
-      if (!url) { return done(new Error('No service found for ' + key)); }
-      log('url for dep', key, url);
-
-      db.get('alive.' + url, (err, alive) => {
-        if (err) { return done(err); }
-        log('url alive:', url, alive);
-        if (!alive) {
-          return db.srem(dbKey, url, err => {
-            if (err) { return done(err); }
-            db.srandmember(dbKey, gotDepUrl(key, dbKey));
-          });
-        }
-        log('url for alive dep', key, url);
-        depUrls[depName] = url;
-        total -= 1;
-        if (!total) { return done(null, depUrls); }
+          const missingDeps = deps.filter((name, index) => !activeValues[index]);
+          getActiveURLs(missingDeps, activeURLs, callback);
+        });
       });
-    };
-  }
-  function gotMockDepUrl(depName, url) {
-    if (!url) { return done(new Error('No mock service found for', depName)); }
-    depUrls[depName] = url;
-    total -= 1;
-    if (!total) { return done(null, depUrls); }
+    });
   }
 }
 
@@ -61,33 +62,29 @@ function register(url, pkg, done) {
 
   connectDB();
   findDependencies(opts.dependencies || {}, opts.mocks || {}, (err, depUrls) => {
+    log('found dependencies:', depUrls);
     if (err) { return done(err); }
-    const name = pkg.name + '@' + pkg.version;
-    db.sadd('endpoints.' + name, url, err => {
+    const urlKey = 'endpoints.' + pkg.name + '@' + pkg.version;
+    db.sadd(urlKey, url, err => {
       if (err) { return done(err); }
       db.end(true);
-      pingHealth(url, err => {
-        if (err) { return done(err); }
-        setInterval(pingHealth, aliveDuration * 1000, url);
-        done(null, depUrls);
-      });
+      log('registered:', url)
+      setServiceHealth(url, err => done(err, depUrls));
     });
   });
 
-  function pingHealth(url, callback) {
+  function setServiceHealth(url, callback) {
     const key = 'alive.' + url;
     callback = callback || (err => { if (err) throw err; });
     
     connectDB();
-    db.set(key, true, err => {
+    db.set(key, true, 'EX', aliveDuration, err => {
       if (err) { return callback(err); }
-      db.expire(key, aliveDuration, err => {
-        callback(err);
-        db.end(true);
-      });
+      db.end(true);
+      setTimeout(setServiceHealth, aliveDuration, url);
+      callback();
     });
   }
 }
 
 module.exports = { findDependencies, register };
-
