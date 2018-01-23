@@ -81,7 +81,7 @@ function register(url, pkg, done) {
     db.set(key, true, 'EX', aliveDuration, err => {
       if (err) { return callback(err); }
       db.end(true);
-      setTimeout(setServiceHealth, aliveDuration, url);
+      setTimeout(setServiceHealth, aliveDuration * 1000, url);
       callback();
     });
   }
