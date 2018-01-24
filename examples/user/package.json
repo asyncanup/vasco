@@ -15,6 +15,7 @@
     "request": "^2.69.0"
   },
   "vasco": {
+    "aliveDuration": 3,
     "dependencies": {
       "service": "1.0.0",
       "auth": "1.0.0"
