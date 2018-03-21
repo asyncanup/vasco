@@ -2,6 +2,12 @@
 
 Service Discoverer node module
 
+## Slides from the talk at DeveloperWeek 2018
+
+[Vasco talk](https://github.com/asyncanup/vasco/blob/33b878b3ae43f2c75197ea3e93afa0876ce990de/vasco-talk.pdf)
+
+Includes an introduction to Service Discovery, Vasco Architecture, and Code Walk-through.
+
 ## Install
 
 ```bash
