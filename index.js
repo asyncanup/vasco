@@ -30,7 +30,9 @@ function findDependencies(dependencies, mockDeps, done) {
       if (urlErr) { return callback(urlErr); }
       log('found endpoints:', urls);
       for (let i = 0; i < urls.length; i++) {
-        if (!urls[i]) { return callback(new Error('No url for: ' + deps[i])); }
+        if (!urls[i]) {
+          return callback(new Error('No url for: ' + deps[i]));
+        }
       }
       
       const aliveBatch = db.batch();
@@ -61,7 +63,9 @@ function findDependencies(dependencies, mockDeps, done) {
 
 function register(url, pkg, done) {
   if (!url) { return done(new Error('Need url of service')); }
-  if (!pkg || !pkg.name || !pkg.version) { return done(new Error('Invalid package')); }
+  if (!pkg || !pkg.name || !pkg.version) {
+    return done(new Error('Invalid package'));
+  }
   const opts = pkg.vasco || {};
   const aliveDuration = opts.aliveDuration || 10; // seconds
   const pkgNameVersion = pkg.name + '@' + pkg.version;
@@ -94,3 +98,6 @@ function register(url, pkg, done) {
 }
 
 module.exports = { findDependencies, register };
+
+
+
